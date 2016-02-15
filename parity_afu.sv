@@ -14,6 +14,14 @@ module parity_afu (
   input MMIOInterfaceInput mmio_in,
   output MMIOInterfaceOutput mmio_out);
 
+  assign job_out.running = 0,
+         job_out.done = 0,
+         job_out.cack = 0,
+         job_out.error = 0,
+         job_out.yield = 0,
+         timebase_request = 0,
+         parity_enabled = 0;
+
   always_ff @(posedge clock) begin
     $display("Clock edge!");
   end

@@ -65,9 +65,9 @@ module afu (
   parity_afu svAFU(
     .clock(ha_pclock),
     .timebase_request(ah_tbreq),
-    .parity_enabled(ah_paren)/*,
+    .parity_enabled(ah_paren),
     .job_in({ha_jval, ha_jcom, ha_jcompar, ha_jea, ha_jeapar}),
-    .job_out({ah_jrunning, ah_jdone, ah_jcack, ah_jerror, ah_jyield}),
+    .job_out({ah_jrunning, ah_jdone, ah_jcack, ah_jerror, ah_jyield})/*,
     .command_in({ha_croom}),
     .command_out({ah_cvalid, ah_ctag, ah_ctagpar, ah_com, ah_compar, ah_cabt,
                   ah_cea, ah_ceapar, ah_cch, ah_csize}),

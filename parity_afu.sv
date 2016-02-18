@@ -21,6 +21,11 @@ module parity_afu (
     .in(jdone),
     .out(job_out.done));
 
+  mmio mmio_handler(
+    .clock(clock),
+    .mmio_in(mmio_in),
+    .mmio_out(mmio_out));
+
   assign job_out.running = 0,
          job_out.cack = 0,
          job_out.error = 0,

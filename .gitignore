@@ -8,3 +8,7 @@ simulation/modelsim/top_run_*
 simulation/modelsim/modelsim.ini
 simulation/modelsim/msim_transcript
 simulation/modelsim/rtl_work/
+top.done
+top.flow.rpt
+top.map.rpt
+top.map.summary

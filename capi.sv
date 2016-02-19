@@ -114,4 +114,37 @@ package CAPI;
     bit data_parity;
   } MMIOInterfaceOutput;
 
+  typedef struct packed {
+    bit [0:15] num_ints_per_process;
+    bit [0:15] num_of_processes;
+    bit [0:15] num_of_afu_crs;
+    bit [0:15] req_prog_model;
+    bit [0:199] reserved_1;
+    bit [0:55] afu_cr_len;
+    bit [0:63] afu_cr_offset;
+    bit [0:5] reserved_2;
+    bit psa_per_process_required;
+    bit psa_required;
+    bit [0:55] psa_length;
+    bit [0:63] psa_offset;
+    bit [0:7] reserved_3;
+    bit [0:55] afu_eb_len;
+    bit [0:63] afu_eb_offset;
+  } AFUDescriptor;
+
+  function bit [0:63] read_afu_descriptor(AFUDescriptor descriptor,
+                                          bit [0:23] address);
+    case(address)
+      'h0: begin
+        return {descriptor.num_ints_per_process,
+                descriptor.num_of_processes,
+                descriptor.num_of_afu_crs,
+                descriptor.req_prog_model};
+      end
+      default: begin
+        return 0;
+      end
+    endcase
+  endfunction
+
 endpackage

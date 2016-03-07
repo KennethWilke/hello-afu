@@ -26,16 +26,24 @@ module parity_afu (
     .mmio_in(mmio_in),
     .mmio_out(mmio_out));
 
-  assign job_out.running = 0,
-         job_out.cack = 0,
+  assign job_out.cack = 0,
          job_out.error = 0,
          job_out.yield = 0,
          timebase_request = 0,
          parity_enabled = 0;
 
   always_ff @(posedge clock) begin
-    if(job_in.valid & job_in.command == RESET) begin
-      jdone <= 1;
+    if(job_in.valid) begin
+      case(job_in.command)
+        RESET: begin
+          jdone <= 1;
+          job_out.running <= 0;
+        end
+        START: begin
+          jdone <= 0;
+          job_out.running <= 1;
+        end
+      endcase
     end else begin
       jdone <= 0;
     end

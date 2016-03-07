@@ -26,6 +26,16 @@ module parity_afu (
     .mmio_in(mmio_in),
     .mmio_out(mmio_out));
 
+  parity_workelement workelement(
+    .clock(clock),
+    .enabled(job_out.running),
+    .reset(jdone),
+    .wed(job_in.address),
+    .buffer_in(buffer_in),
+    .response(response),
+    .command_out(command_out),
+    .buffer_out(buffer_out));
+
   assign job_out.cack = 0,
          job_out.error = 0,
          job_out.yield = 0,

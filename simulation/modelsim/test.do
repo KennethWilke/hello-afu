@@ -1,4 +1,3 @@
 vsim work.top
-do watch_job_interface.do
-do watch_mmio_interface.do
+add wave -position insertpoint sim:/top/a0/svAFU/workelement/*
 run 136

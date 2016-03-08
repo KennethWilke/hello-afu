@@ -47,6 +47,7 @@ module parity_workelement (
   logic [0:1023] parity_data;
   logic stripe_received;
   logic [0:511] write_buffer;
+  longint unsigned offset;
 
   shift_register #(512) write_shift (
     .clock(clock),
@@ -74,6 +75,7 @@ module parity_workelement (
           command_out.address <= wed;
           command_out.valid <= 1;
           current_state = WAITING_FOR_REQUEST;
+          offset <= 0;
         end
         WAITING_FOR_REQUEST: begin
           command_out.valid <= 0;
@@ -95,10 +97,10 @@ module parity_workelement (
           command_out.command <= READ_CL_NA;
           if (command_out.tag == REQUEST_READ) begin
             command_out.tag <= STRIPE1_READ;
-            command_out.address <= request.stripe1;
+            command_out.address <= request.stripe1 + offset;
           end else begin
             command_out.tag <= STRIPE2_READ;
-            command_out.address <= request.stripe2;
+            command_out.address <= request.stripe2 + offset;
             current_state <= WAITING_FOR_STRIPES;
           end
         end
@@ -136,7 +138,7 @@ module parity_workelement (
         WRITE_PARITY: begin
           if (command_out.tag != PARITY_WRITE) begin
             command_out.command <= WRITE_NA;
-            command_out.address <= request.parity;
+            command_out.address <= request.parity + offset;
             command_out.tag <= PARITY_WRITE;
             command_out.valid <= 1;
           end else begin
@@ -150,7 +152,12 @@ module parity_workelement (
             // Handle response
             if (response.valid &&
                 response.tag == PARITY_WRITE) begin
-                current_state <= DONE;
+                if (offset + 128 < request.size) begin
+                  offset <= offset + 128;
+                  current_state <= REQUEST_STRIPES;
+                end else begin
+                  current_state <= DONE;
+                end
             end
           end
         end

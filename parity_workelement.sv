@@ -42,6 +42,16 @@ module parity_workelement (
 
   state current_state;
   parity_request request;
+  logic [0:1023] stripe1_data;
+  logic [0:1023] stripe2_data;
+  logic [0:1023] parity_data;
+  logic stripe_received;
+  logic [0:511] write_buffer;
+
+  shift_register #(512) write_shift (
+    .clock(clock),
+    .in(write_buffer),
+    .out(buffer_out.read_data));
 
   assign command_out.abt = 0,
          command_out.context_handle = 0,
@@ -49,7 +59,8 @@ module parity_workelement (
          command_out.command_parity = ~^command_out.command,
          command_out.address_parity = ~^command_out.address,
          command_out.tag_parity = ~^command_out.tag,
-         buffer_out.read_parity = ~^buffer_out.read_data;
+         buffer_out.read_parity = ~^buffer_out.read_data,
+         parity_data = stripe1_data ^ stripe2_data;
 
   always_ff @ (posedge clock) begin
     if (reset) begin
@@ -79,7 +90,80 @@ module parity_workelement (
           end
         end
         REQUEST_STRIPES: begin
-          $display("Got WED!");
+          command_out.valid <= 1;
+          command_out.size = 128;
+          command_out.command <= READ_CL_NA;
+          if (command_out.tag == REQUEST_READ) begin
+            command_out.tag <= STRIPE1_READ;
+            command_out.address <= request.stripe1;
+          end else begin
+            command_out.tag <= STRIPE2_READ;
+            command_out.address <= request.stripe2;
+            current_state <= WAITING_FOR_STRIPES;
+          end
+        end
+        WAITING_FOR_STRIPES: begin
+          command_out.valid <= 0;
+          if (buffer_in.write_valid) begin
+            case(buffer_in.write_tag)
+              STRIPE1_READ: begin
+                if (buffer_in.write_address == 0) begin
+                  stripe1_data[0:511] <= buffer_in.write_data;
+                end else begin
+                  stripe1_data[512:1023] <= buffer_in.write_data;
+                end
+              end
+              STRIPE2_READ: begin
+                if (buffer_in.write_address == 0) begin
+                  stripe2_data[0:511] <= buffer_in.write_data;
+                end else begin
+                  stripe2_data[512:1023] <= buffer_in.write_data;
+                end
+              end
+            endcase
+          end
+          if (response.valid) begin
+            if (response.tag == STRIPE1_READ ||
+                response.tag == STRIPE2_READ) begin
+              if (stripe_received) begin
+                current_state <= WRITE_PARITY;
+              end else begin
+                stripe_received <= 1;
+              end
+            end
+          end
+        end
+        WRITE_PARITY: begin
+          if (command_out.tag != PARITY_WRITE) begin
+            command_out.command <= WRITE_NA;
+            command_out.address <= request.parity;
+            command_out.tag <= PARITY_WRITE;
+            command_out.valid <= 1;
+          end else begin
+            command_out.valid <= 0;
+            // Read half depending on address
+            if (buffer_in.read_address == 0)  begin
+              write_buffer <= parity_data[0:511];
+            end else begin
+              write_buffer <= parity_data[512:1023];
+            end
+            // Handle response
+            if (response.valid &&
+                response.tag == PARITY_WRITE) begin
+                current_state <= DONE;
+            end
+          end
+        end
+        DONE: begin
+          if (command_out.tag != DONE_WRITE) begin
+            command_out.tag <= DONE_WRITE;
+            command_out.size <= 1;
+            command_out.address <= wed + 32;
+            command_out.valid <= 1;
+            write_buffer[256:263] <= 1;
+          end else begin
+            command_out.valid <= 0;
+          end
         end
       endcase
     end

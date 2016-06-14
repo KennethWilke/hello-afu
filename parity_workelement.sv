@@ -1,7 +1,7 @@
 import CAPI::*;
 
 typedef enum {
-  START,
+  AFU_START,
   WAITING_FOR_REQUEST,
   REQUEST_STRIPES,
   WAITING_FOR_STRIPES,
@@ -65,10 +65,10 @@ module parity_workelement (
 
   always_ff @ (posedge clock) begin
     if (reset) begin
-      current_state <= START;
+      current_state <= AFU_START;
     end else if (enabled) begin
       case(current_state)
-        START: begin
+        AFU_START: begin
           command_out.command <= READ_CL_NA;
           command_out.tag <= REQUEST_READ;
           command_out.size <= 32;
